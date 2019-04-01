@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">BasicProject</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Android Studio</string>
+    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+    <string name="ToDoListFileName">ToDoList2</string>
+    <string name="ToDoListArrayKey">ToDoList</string>
+    <string name="AddItemPopupTitle">Add Item</string>
+    <string name="AddItemPopupMessage">Please add new item</string>
+    <string name="PositiveButtonsText">OK</string>
+    <string name="NegativeButtonsText">Cancel</string>
+    <string name="EditItemPopupTitle">Edit Item</string>
+    <string name="EditItemPopupMessage">Please edit item</string>
+    <string name="settings_fragment_tag">settings_fragment</string>
+</resources>
