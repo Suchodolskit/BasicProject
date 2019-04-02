@@ -1,12 +1,15 @@
 package com.example.basicproject;
 
+import android.annotation.SuppressLint;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.preference.PreferenceFragment;
 import android.preference.SwitchPreference;
 import android.renderscript.ScriptGroup;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
@@ -23,6 +26,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View.OnClickListener;
 import android.widget.EditText;
 
 import java.io.File;
@@ -42,23 +46,58 @@ public class MainActivity extends AppCompatActivity
     private RecyclerView mRecyclerView;
     private ToDoListAdapter mAdapter;
     private Fragment sortfragment;
+    private FragmentTransaction fragmentTransaction;
+    private FloatingActionButton fab;
+    private Toolbar toolbar;
+    private static boolean FragmentVisible;
+    private listener lis = new listener();
+
+    @SuppressLint("RestrictedApi")
+    private void SetFragmentVisible()
+    {
+        mRecyclerView.setVisibility(View.INVISIBLE);
+        CoordinatorLayout.LayoutParams p = (CoordinatorLayout.LayoutParams) fab.getLayoutParams();
+        p.setAnchorId(View.NO_ID);
+        fab.setLayoutParams(p);
+        fab.setVisibility(View.GONE);
+        fragmentTransaction.show(sortfragment);
+        fragmentTransaction.commit();
+        toolbar.setNavigationIcon(R.drawable.ic_arrow_back);
+        setSupportActionBar(toolbar);
+        toolbar.setNavigationOnClickListener(lis);
+    }
+
+    private class listener implements OnClickListener{
+        @Override
+        public void onClick(View v) {
+            FragmentVisible = false;
+            MainActivity.this.recreate();
+        }
+    }
+
+
+    @SuppressLint("RestrictedApi")
+    private void SetListVisible()
+    {
+        mRecyclerView.setVisibility(View.VISIBLE);
+        CoordinatorLayout.LayoutParams p = (CoordinatorLayout.LayoutParams) fab.getLayoutParams();
+        p.setAnchorId(View.NO_ID);
+        fab.setLayoutParams(p);
+        fab.setVisibility(View.VISIBLE);
+        fragmentTransaction.hide(sortfragment);
+        fragmentTransaction.commit();
+    }
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        DrawerLayout drawer = findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.addDrawerListener(toggle);
-        toggle.syncState();
 
-        NavigationView navigationView = findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
+        fab = findViewById(R.id.fab);
 
         mRecyclerView = findViewById(R.id.recyclerview);
 
@@ -67,6 +106,7 @@ public class MainActivity extends AppCompatActivity
             mToDoList = savedInstanceState.getStringArrayList(getString(R.string.ToDoListArrayKey));
             mAdapter = new ToDoListAdapter(MainActivity.this, mToDoList);
             mRecyclerView.setAdapter(mAdapter);
+            //mRecyclerView.setAlpha(0);
         } else {
             new Thread(new Runnable() {
                 public void run() {
@@ -86,6 +126,7 @@ public class MainActivity extends AppCompatActivity
                     }
                 }
             }).start();
+            FragmentVisible = false;
         }
         mRecyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
 
@@ -110,15 +151,25 @@ public class MainActivity extends AppCompatActivity
         });
         helper.attachToRecyclerView(mRecyclerView);
 
-//        sortfragment = new settings();
-//        FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
-//        if(savedInstanceState == null) {
-//            fragmentTransaction.add(R.id.layout, sortfragment, getString(R.string.settings_fragment_tag));
+        sortfragment = new settings();
+        fragmentTransaction = getFragmentManager().beginTransaction();
+
+        if(savedInstanceState == null) {
+            fragmentTransaction.add(R.id.layout, sortfragment, getString(R.string.settings_fragment_tag));
+//            fragmentTransaction.hide(sortfragment);
 //            fragmentTransaction.commit();
-//        }
-//        else {
-//            sortfragment = getFragmentManager().findFragmentByTag(getString(R.string.settings_fragment_tag));
-//        }
+        }
+        else {
+            sortfragment = getFragmentManager().findFragmentByTag(getString(R.string.settings_fragment_tag));
+        }
+        if(FragmentVisible)
+        {
+            SetFragmentVisible();
+        }
+        else
+        {
+            SetListVisible();
+        }
     }
 
     @Override
@@ -146,9 +197,9 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
+        //if (id == R.id.action_settings) {
+         //   return true;
+       // }
 
         return super.onOptionsItemSelected(item);
     }
@@ -230,6 +281,11 @@ public class MainActivity extends AppCompatActivity
             }
         }).start();
 
+    }
+
+    public void settingsHandler(MenuItem item) {
+        FragmentVisible = true;
+        this.recreate();
     }
 
     public static class settings extends PreferenceFragment {
