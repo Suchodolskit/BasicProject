@@ -15,7 +15,7 @@ tools:context="com.example.android.basicproject.MainActivity">
 <item
     android:id="@+id/action_menu_or_back"
     android:orderInCategory="100"
-    android:title="settings"
+    android:title="@string/settings_title"
     app:showAsAction="always"
     android:icon="@drawable/ic_settings"
     android:onClick="settingsHandler"/>

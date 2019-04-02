@@ -4,24 +4,19 @@ import android.annotation.SuppressLint;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.os.Bundle;
 import android.preference.PreferenceFragment;
 import android.preference.SwitchPreference;
-import android.renderscript.ScriptGroup;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
@@ -29,18 +24,12 @@ import android.view.MenuItem;
 import android.view.View.OnClickListener;
 import android.widget.EditText;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
+
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+{
 
     private ArrayList<String> mToDoList = new ArrayList<>();
     private RecyclerView mRecyclerView;
@@ -51,10 +40,11 @@ public class MainActivity extends AppCompatActivity
     private Toolbar toolbar;
     private static boolean FragmentVisible;
     private listener lis = new listener();
+    private DatabaseHelper mDatabeseHelper;
+    private static boolean sortedList;
 
     @SuppressLint("RestrictedApi")
-    private void SetFragmentVisible()
-    {
+    private void SetFragmentVisible() {
         mRecyclerView.setVisibility(View.INVISIBLE);
         CoordinatorLayout.LayoutParams p = (CoordinatorLayout.LayoutParams) fab.getLayoutParams();
         p.setAnchorId(View.NO_ID);
@@ -67,7 +57,7 @@ public class MainActivity extends AppCompatActivity
         toolbar.setNavigationOnClickListener(lis);
     }
 
-    private class listener implements OnClickListener{
+    private class listener implements OnClickListener {
         @Override
         public void onClick(View v) {
             FragmentVisible = false;
@@ -75,10 +65,8 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-
     @SuppressLint("RestrictedApi")
-    private void SetListVisible()
-    {
+    private void SetListVisible() {
         mRecyclerView.setVisibility(View.VISIBLE);
         CoordinatorLayout.LayoutParams p = (CoordinatorLayout.LayoutParams) fab.getLayoutParams();
         p.setAnchorId(View.NO_ID);
@@ -86,8 +74,9 @@ public class MainActivity extends AppCompatActivity
         fab.setVisibility(View.VISIBLE);
         fragmentTransaction.hide(sortfragment);
         fragmentTransaction.commit();
+        if (sortedList)
+            Collections.sort(mToDoList);
     }
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,56 +85,50 @@ public class MainActivity extends AppCompatActivity
         toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-
         fab = findViewById(R.id.fab);
 
         mRecyclerView = findViewById(R.id.recyclerview);
-
+        mDatabeseHelper = new DatabaseHelper(this);
 
         if (savedInstanceState != null) {
             mToDoList = savedInstanceState.getStringArrayList(getString(R.string.ToDoListArrayKey));
             mAdapter = new ToDoListAdapter(MainActivity.this, mToDoList);
             mRecyclerView.setAdapter(mAdapter);
-            //mRecyclerView.setAlpha(0);
         } else {
             new Thread(new Runnable() {
                 public void run() {
-                    String filename = getString(R.string.ToDoListFileName);
-                    FileInputStream inputStream;
-                    try {
-                        inputStream = openFileInput(filename);
-                        ObjectInputStream oos = new ObjectInputStream(inputStream);
-                        mToDoList = (ArrayList<String>) oos.readObject();
-                        mAdapter = new ToDoListAdapter(MainActivity.this, mToDoList);
-                        mRecyclerView.setAdapter(mAdapter);
-                        oos.close();
-                        inputStream.close();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        mToDoList = new ArrayList();
-                    }
+                    mToDoList = mDatabeseHelper.SelectAllToDos();
+                    mAdapter = new ToDoListAdapter(MainActivity.this, mToDoList);
+                    MainActivity.this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            MainActivity.this.recreate();
+                        }
+                    });
                 }
             }).start();
             FragmentVisible = false;
         }
         mRecyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
 
-        ItemTouchHelper helper = new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0,ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT ) {
+        ItemTouchHelper helper = new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
             @Override
             public boolean onMove(RecyclerView recyclerView,
                                   RecyclerView.ViewHolder viewHolder,
                                   RecyclerView.ViewHolder target) {
                 int from = viewHolder.getAdapterPosition();
                 int to = target.getAdapterPosition();
-                Collections.swap(mToDoList,from,to);
-                mAdapter.notifyItemMoved(from,to);
+                Collections.swap(mToDoList, from, to);
+                mAdapter.notifyItemMoved(from, to);
                 return true;
             }
 
             @Override
             public void onSwiped(RecyclerView.ViewHolder viewHolder,
                                  int direction) {
+                String Item = mToDoList.get(viewHolder.getAdapterPosition());
                 mToDoList.remove(viewHolder.getAdapterPosition());
+                mDatabeseHelper.deleteItem(Item);
                 mAdapter.notifyItemRemoved(viewHolder.getAdapterPosition());
             }
         });
@@ -154,29 +137,23 @@ public class MainActivity extends AppCompatActivity
         sortfragment = new settings();
         fragmentTransaction = getFragmentManager().beginTransaction();
 
-        if(savedInstanceState == null) {
+        if (savedInstanceState == null) {
             fragmentTransaction.add(R.id.layout, sortfragment, getString(R.string.settings_fragment_tag));
-//            fragmentTransaction.hide(sortfragment);
-//            fragmentTransaction.commit();
-        }
-        else {
+        } else {
             sortfragment = getFragmentManager().findFragmentByTag(getString(R.string.settings_fragment_tag));
         }
-        if(FragmentVisible)
-        {
+        if (FragmentVisible) {
             SetFragmentVisible();
-        }
-        else
-        {
+        } else {
             SetListVisible();
         }
     }
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
+        if (FragmentVisible) {
+            FragmentVisible = false;
+            this.recreate();
         } else {
             super.onBackPressed();
         }
@@ -184,49 +161,14 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        //if (id == R.id.action_settings) {
-         //   return true;
-       // }
-
         return super.onOptionsItemSelected(item);
-    }
-
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
-
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
-
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
-
-        }
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
     }
 
     public void AddItemToList(View view) {
@@ -242,7 +184,11 @@ public class MainActivity extends AppCompatActivity
         builder.setPositiveButton(R.string.PositiveButtonsText, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                mToDoList.add(input.getText().toString());
+                String item = input.getText().toString();
+                mDatabeseHelper.addItem(item);
+                addToList(item);
+                if (sortedList)
+                    mAdapter.notifyDataSetChanged();
             }
         });
 
@@ -260,32 +206,19 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-
-        outState.putStringArrayList (getString(R.string.ToDoListArrayKey), mToDoList);
-
-        new Thread(new Runnable() {
-            public void run() {
-
-                String filename = getString(R.string.ToDoListFileName);
-                FileOutputStream outputStream;
-
-                try {
-                    outputStream = openFileOutput(filename, MainActivity.this.MODE_PRIVATE);
-                    ObjectOutputStream oos = new ObjectOutputStream(outputStream);
-                    oos.writeObject(mToDoList);
-                    oos.close();
-                    outputStream.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
+        outState.putStringArrayList(getString(R.string.ToDoListArrayKey), mToDoList);
 
     }
 
     public void settingsHandler(MenuItem item) {
         FragmentVisible = true;
         this.recreate();
+    }
+
+    private void addToList(String Item) {
+        mToDoList.add(Item);
+        if (sortedList)
+            Collections.sort(mToDoList);
     }
 
     public static class settings extends PreferenceFragment {
@@ -295,5 +228,13 @@ public class MainActivity extends AppCompatActivity
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.settings);
         }
+
+        @Override
+        public void onDestroy() {
+            super.onDestroy();
+            SwitchPreference switchPreference = (SwitchPreference) findPreference(getString( R.string.Sort_preference_key));
+            sortedList = switchPreference.isChecked();
+        }
     }
+
 }

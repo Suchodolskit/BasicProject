@@ -15,4 +15,8 @@
     <string name="EditItemPopupTitle">Edit Item</string>
     <string name="EditItemPopupMessage">Please edit item</string>
     <string name="settings_fragment_tag">settings_fragment</string>
+    <string name="settings_title">settings</string>
+    <string name="Sort_preference_name">Sort List</string>
+    <string name="Sort_preference_summary">Sort ToDo list by name</string>
+    <string name="Sort_preference_key">sortlistoption</string>
 </resources>

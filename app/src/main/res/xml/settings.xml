@@ -2,9 +2,9 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
     <SwitchPreference
-        android:title="Sort List"
-        android:summary="Sort ToDo list by name"
-        android:key="sortlistoption"
+        android:title="@string/Sort_preference_name"
+        android:summary="@string/Sort_preference_summary"
+        android:key="@string/Sort_preference_key"
         />
 
 

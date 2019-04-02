@@ -71,6 +71,7 @@ public class ToDoListAdapter extends RecyclerView.Adapter<ToDoListAdapter.ToDoLi
 
             final EditText input = new EditText(context);
             input.setText(mToDoList.get(mPosition));
+            input.setSelection(mToDoList.get(mPosition).length());
             builder.setView(input);
 
             builder.setPositiveButton(R.string.PositiveButtonsText, new DialogInterface.OnClickListener() {
